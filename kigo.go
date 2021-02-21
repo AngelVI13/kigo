@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"regexp"
+	"hash/fnv"
 )
 
 
@@ -34,15 +35,42 @@ func PatternsInPath(patterns []string, path string) bool {
 	return false
 }
 
+
+func GetFileHash(path string) (uint64, error) {
+	var fileHash uint64 = 0
+
+	f, err := os.Open(path)
+	if err != nil {
+		return fileHash, err
+	}
+	defer f.Close()
+	
+	contents := make([]byte, 0)
+	
+	_, err = f.Read(contents)
+	if err != nil {
+		return fileHash, err
+	}
+	fmt.Println(contents)
+	
+	h := fnv.New64a()
+	h.Write(contents)
+	fileHash = h.Sum64()
+	
+	return fileHash, nil
+}
+
 // var Files [string]int
 
 
 func main() {
 	fmt.Println("Hello world")
 
-	root := "./"
-	
-	exclude_patterns := []string{"*.exe", "*.git/*"}	
+	// parameters
+	root := "./"	
+	exclude_patterns := []string{"*.exe", "*.git/*"}
+
+	// Format exclude patterns into valid regex	
 	for i, pattern := range exclude_patterns {
 		exclude_patterns[i] = FormatPattern(pattern)
 	}
@@ -53,7 +81,16 @@ func main() {
 	
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if !info.IsDir() && !PatternsInPath(exclude_patterns, path) {
+			
+			hash, err := GetFileHash(path)
+			if err != nil {
+				panic(fmt.Errorf("%v", err))
+			}
+			fmt.Println(hash, path)
+			
 			files = append(files, path)
+			
+
 		}
 		return nil
 	})
