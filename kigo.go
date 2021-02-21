@@ -7,6 +7,7 @@ import (
 	"strings"
 	"regexp"
 	"hash/fnv"
+	"io/ioutil"
 )
 
 
@@ -39,19 +40,11 @@ func PatternsInPath(patterns []string, path string) bool {
 func GetFileHash(path string) (uint64, error) {
 	var fileHash uint64 = 0
 
-	f, err := os.Open(path)
+	// this reads the whole file in memory
+	contents, err := ioutil.ReadFile(path)
 	if err != nil {
 		return fileHash, err
 	}
-	defer f.Close()
-	
-	contents := make([]byte, 0)
-	
-	_, err = f.Read(contents)
-	if err != nil {
-		return fileHash, err
-	}
-	fmt.Println(contents)
 	
 	h := fnv.New64a()
 	h.Write(contents)
