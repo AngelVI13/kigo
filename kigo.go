@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 func FormatPattern(pattern string) string {
@@ -85,6 +86,7 @@ func main() {
 	// parameters
 	root := "./"
 	excludePatterns := []string{"*.exe", "*.git*"}
+	// commands := []string{"echo Hello"}
 
 	// Format exclude patterns into valid regex
 	for i, pattern := range excludePatterns {
@@ -95,11 +97,18 @@ func main() {
 
 	FilesHash := make(FilesHash)
 
-	changedFiles, err := ComputeChanges(FilesHash, root, excludePatterns)
-	if err != nil {
-		log.Fatal(err)
-	}
+	for {
+		time.Sleep(1000)
 
-	fmt.Println(changedFiles)
-	fmt.Println(FilesHash)
+		changedFiles, err := ComputeChanges(FilesHash, root, excludePatterns)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if len(changedFiles) == 0 {
+			continue
+		}
+
+		fmt.Println(changedFiles)
+	}
 }
