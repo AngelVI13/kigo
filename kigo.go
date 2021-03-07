@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"hash/fnv"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -110,24 +112,53 @@ func ExecuteCommands(commands []string) {
 	}
 }
 
+type Config struct {
+	IncludePatterns []string
+	ExcludePatterns []string
+	Commands        []string
+}
+
+func LoadConfig(configPath string) (config Config, err error) {
+	configFile, err := os.Open(configPath)
+	if err != nil {
+		return config, fmt.Errorf("Failed to open config file. Error: `%v`", err)
+	}
+	defer configFile.Close()
+
+	configData, err := io.ReadAll(configFile)
+	if err != nil {
+		return config, fmt.Errorf("Failed while reading config file. Error: `%v`", err)
+	}
+
+	if err := json.Unmarshal(configData, &config); err != nil {
+		return config, fmt.Errorf("Error while unmarshalling config file. Error: `%v`", err)
+	}
+
+	// Format include & exclude patterns into valid regex
+	FormatPatternSlice(config.ExcludePatterns)
+	FormatPatternSlice(config.IncludePatterns)
+	return config, nil
+}
+
 func main() {
 	// parameters
 	root := "./"
-	excludePatterns := []string{"*.exe", "*.git*"}
-	includePatterns := []string{"*.go"}
+	// excludePatterns := []string{"*.exe", "*.git*"}
+	// includePatterns := []string{"*.go"}
+	// commands := []string{"gofmt -w kigo.go"}
 
-	// Format include & exclude patterns into valid regex
-	FormatPatternSlice(excludePatterns)
-	FormatPatternSlice(includePatterns)
-
-	commands := []string{"clear", "gofmt -w kigo.go"}
+	configPath := "config.json"
+	config, err := LoadConfig(configPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	FilesHash := make(FilesHash)
 
 	for {
 		time.Sleep(1000)
 
-		changedFiles, err := ComputeChanges(FilesHash, root, excludePatterns, includePatterns)
+		changedFiles, err := ComputeChanges(FilesHash, root, config.ExcludePatterns, config.IncludePatterns)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -137,6 +168,6 @@ func main() {
 		}
 
 		fmt.Println(changedFiles)
-		ExecuteCommands(commands)
+		ExecuteCommands(config.Commands)
 	}
 }

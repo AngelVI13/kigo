@@ -1,0 +1,8 @@
+{
+	"IncludePatterns": ["*.go"],
+	"ExcludePatterns": ["*.exe", "*.git*"],
+	"Commands": [
+		"clear",
+		"gofmt -w kigo.go"
+	]
+}
