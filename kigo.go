@@ -5,6 +5,7 @@ import (
 	"hash/fnv"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -83,12 +84,31 @@ func ComputeChanges(filesHash FilesHash, rootPath string, excludePatterns, inclu
 	return changedFiles, err
 }
 
+func ExecuteCommands(commands []string) {
+	for _, cmd := range commands {
+		// split the command into 2 parts - executable & arguments
+		command := strings.SplitN(cmd, " ", 2)
+		executable := command[0]
+		args := command[1]
+
+		out, err := exec.Command(executable, args).CombinedOutput()
+		log.Printf("%s: \n%s\n", cmd, out)
+
+		if err != nil {
+			log.Printf("Error while executing: `%s`\n", cmd)
+			log.Println(err)
+			log.Println("Interrupting further execution.")
+			break
+		}
+	}
+}
+
 func main() {
 	// parameters
 	root := "./"
 	excludePatterns := []string{"*.exe", "*.git*"}
 	includePatterns := []string{"*.go"}
-	// commands := []string{"echo Hello"}
+	commands := []string{"echo Hello", "gofmt -w kigo.go"}
 
 	// Format include & exclude patterns into valid regex
 	for i, pattern := range excludePatterns {
@@ -107,11 +127,12 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		
+
 		if len(changedFiles) == 0 {
 			continue
 		}
 
 		fmt.Println(changedFiles)
+		ExecuteCommands(commands)
 	}
 }
