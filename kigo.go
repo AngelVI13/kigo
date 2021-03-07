@@ -113,6 +113,7 @@ func ExecuteCommands(commands []string) {
 }
 
 type Config struct {
+	RootPath        string
 	IncludePatterns []string
 	ExcludePatterns []string
 	Commands        []string
@@ -141,13 +142,10 @@ func LoadConfig(configPath string) (config Config, err error) {
 }
 
 func main() {
-	// parameters
-	root := "./"
-	// excludePatterns := []string{"*.exe", "*.git*"}
-	// includePatterns := []string{"*.go"}
-	// commands := []string{"gofmt -w kigo.go"}
-
+	// todo make this a cli argument with default value
 	configPath := "config.json"
+
+	// todo raise error if unmarshalling does not find and fill all fields of Config struct
 	config, err := LoadConfig(configPath)
 	if err != nil {
 		log.Fatal(err)
@@ -158,7 +156,8 @@ func main() {
 	for {
 		time.Sleep(1000)
 
-		changedFiles, err := ComputeChanges(FilesHash, root, config.ExcludePatterns, config.IncludePatterns)
+		// todo provide directly config instead of individual parameters
+		changedFiles, err := ComputeChanges(FilesHash, config.RootPath, config.ExcludePatterns, config.IncludePatterns)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -168,6 +167,7 @@ func main() {
 		}
 
 		fmt.Println(changedFiles)
+		// todo add support for operations on changed files
 		ExecuteCommands(config.Commands)
 	}
 }

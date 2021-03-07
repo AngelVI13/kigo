@@ -1,4 +1,5 @@
 {
+	"RootPath": "./",
 	"IncludePatterns": ["*.go"],
 	"ExcludePatterns": ["*.exe", "*.git*"],
 	"Commands": [
