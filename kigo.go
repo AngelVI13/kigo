@@ -12,6 +12,13 @@ import (
 	"time"
 )
 
+// FormatPatternSlice Modifies all members of a pattern slice to legal regex (in-place)
+func FormatPatternSlice(patterns []string) {
+	for i, pattern := range patterns {
+		patterns[i] = FormatPattern(pattern)
+	}
+}
+
 func FormatPattern(pattern string) string {
 	// Escape all "." characters
 	pattern = strings.Replace(pattern, ".", "\\.", -1)
@@ -86,13 +93,13 @@ func ComputeChanges(filesHash FilesHash, rootPath string, excludePatterns, inclu
 
 func ExecuteCommands(commands []string) {
 	for _, cmd := range commands {
-		// split the command into 2 parts - executable & arguments
-		command := strings.SplitN(cmd, " ", 2)
+		// split the command into parts (a part is any whitespace separated chain of chars)
+		command := strings.Fields(cmd)
 		executable := command[0]
-		args := command[1]
+		args := command[1:len(command)]
 
-		out, err := exec.Command(executable, args).CombinedOutput()
-		log.Printf("%s: \n%s\n", cmd, out)
+		out, err := exec.Command(executable, args...).CombinedOutput()
+		log.Printf("|> %s: \n%s\n", cmd, out)
 
 		if err != nil {
 			log.Printf("Error while executing: `%s`\n", cmd)
@@ -108,15 +115,12 @@ func main() {
 	root := "./"
 	excludePatterns := []string{"*.exe", "*.git*"}
 	includePatterns := []string{"*.go"}
-	commands := []string{"echo Hello", "gofmt -w kigo.go"}
 
 	// Format include & exclude patterns into valid regex
-	for i, pattern := range excludePatterns {
-		excludePatterns[i] = FormatPattern(pattern)
-	}
-	for i, pattern := range includePatterns {
-		includePatterns[i] = FormatPattern(pattern)
-	}
+	FormatPatternSlice(excludePatterns)
+	FormatPatternSlice(includePatterns)
+
+	commands := []string{"clear", "gofmt -w kigo.go"}
 
 	FilesHash := make(FilesHash)
 
