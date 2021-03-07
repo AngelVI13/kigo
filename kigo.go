@@ -54,11 +54,12 @@ func GetFileHash(path string) (uint64, error) {
 
 type FilesHash map[string]uint64
 
-func ComputeChanges(filesHash FilesHash, rootPath string, excludePatterns []string) ([]string, error) {
+func ComputeChanges(filesHash FilesHash, rootPath string, excludePatterns, includePatterns []string) ([]string, error) {
 	var changedFiles []string
 
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() || PatternsInPath(excludePatterns, path) {
+		// Ignore directories, excluded patterns and patterns not present in the include filter
+		if info.IsDir() || PatternsInPath(excludePatterns, path) || !PatternsInPath(includePatterns, path) {
 			return nil
 		}
 
@@ -71,10 +72,10 @@ func ComputeChanges(filesHash FilesHash, rootPath string, excludePatterns []stri
 		// if file is not in the hash map or the hashes don't match => register a file change
 		if !ok || elem != hash {
 			changedFiles = append(changedFiles, path)
+			// update hash for changed file only.
+			// there is no need to update hash for all files
+			filesHash[path] = hash
 		}
-
-		// update hash for every file
-		filesHash[path] = hash
 
 		return nil
 	})
@@ -86,25 +87,27 @@ func main() {
 	// parameters
 	root := "./"
 	excludePatterns := []string{"*.exe", "*.git*"}
+	includePatterns := []string{"*.go"}
 	// commands := []string{"echo Hello"}
 
-	// Format exclude patterns into valid regex
+	// Format include & exclude patterns into valid regex
 	for i, pattern := range excludePatterns {
 		excludePatterns[i] = FormatPattern(pattern)
 	}
-
-	fmt.Println(excludePatterns)
+	for i, pattern := range includePatterns {
+		includePatterns[i] = FormatPattern(pattern)
+	}
 
 	FilesHash := make(FilesHash)
 
 	for {
 		time.Sleep(1000)
 
-		changedFiles, err := ComputeChanges(FilesHash, root, excludePatterns)
+		changedFiles, err := ComputeChanges(FilesHash, root, excludePatterns, includePatterns)
 		if err != nil {
 			log.Fatal(err)
 		}
-
+		
 		if len(changedFiles) == 0 {
 			continue
 		}
