@@ -97,8 +97,13 @@ func ComputeChanges(filesHash FilesHash, config *Config) ([]string, error) {
 	return changedFiles, err
 }
 
-func ExecuteCommands(commands []string) {
+func ExecuteCommands(commands, changedFiles []string, delimiter string) {
+	log.Println("Running commands...")
+
 	for _, cmd := range commands {
+		files := strings.Join(changedFiles, " ")
+		cmd = strings.ReplaceAll(cmd, ChangedFilesPlaceholder, files)
+
 		// split the command into parts (a part is any whitespace separated chain of chars)
 		command := strings.Fields(cmd)
 		executable := command[0]
@@ -107,13 +112,12 @@ func ExecuteCommands(commands []string) {
 		out, err := exec.Command(executable, args...).CombinedOutput()
 
 		// todo Make this output pretty
-		// todo add support for custom delimiter i.e. |>
-		log.Printf("|> %s: \n%s\n", cmd, out)
+		log.Printf("%s %s: \n%s\n", delimiter, cmd, out)
 
 		if err != nil {
 			log.Printf("Error while executing: `%s`\n", cmd)
 			log.Println(err)
-			log.Println("Interrupting further execution.")
+			log.Printf("Interrupting further execution.\n\n")
 			break
 		}
 	}
@@ -123,12 +127,9 @@ type Config struct {
 	RootPath        string
 	IncludePatterns []string
 	ExcludePatterns []string
-
-	// todo finish integration of delimiter and interval
-	Delimiter string
-	Interval  int
-
-	Commands []string
+	Delimiter       string
+	Interval        int
+	Commands        []string
 }
 
 func LoadConfig(configPath string) (config Config, err error) {
@@ -157,6 +158,18 @@ func LoadConfig(configPath string) (config Config, err error) {
 	return config, nil
 }
 
+func getSleepDuration(configInterval int, defaultInterval time.Duration) time.Duration {
+	// Compute sleep duration in seconds. Minimum sleep is 1s.
+	sleepDuration := time.Duration(configInterval) * time.Second
+	if sleepDuration < defaultInterval {
+		sleepDuration = defaultInterval
+	}
+	return sleepDuration
+}
+
+// todo add support for custom defined placeholder
+const ChangedFilesPlaceholder = "<files>"
+
 func main() {
 	var configPath = flag.String("config", "config.json", "Path to config file. (ex. `config.json`)")
 	flag.Parse()
@@ -167,10 +180,12 @@ func main() {
 	}
 
 	FilesHash := make(FilesHash)
+	sleepDuration := getSleepDuration(config.Interval, time.Second)
 
 	for {
 		// todo check for keypresses and exit gracefully
-		time.Sleep(2 * time.Second)
+
+		time.Sleep(sleepDuration)
 
 		changedFiles, err := ComputeChanges(FilesHash, &config)
 		if err != nil {
@@ -181,8 +196,6 @@ func main() {
 			continue
 		}
 
-		fmt.Println(changedFiles)
-		// todo add support for operations on changed files
-		ExecuteCommands(config.Commands)
+		ExecuteCommands(config.Commands, changedFiles, config.Delimiter)
 	}
 }

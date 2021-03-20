@@ -2,9 +2,11 @@
 	"RootPath": "./",
 	"IncludePatterns": ["*.go"],
 	"ExcludePatterns": ["*.exe", "*.git*"],
+	"Interval": 2,
+	"Delimiter": ">>>",
 	"Commands": [
 		"clear",
-		"gofmt -w kigo.go",
-		"go vet kigo.go"
+		"gofmt -w <files>",
+		"go vet <files>"
 	]
 }
