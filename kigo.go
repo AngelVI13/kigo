@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"hash/fnv"
 	"io"
@@ -149,10 +150,10 @@ func LoadConfig(configPath string) (config Config, err error) {
 }
 
 func main() {
-	// todo make this a cli argument with default value
-	configPath := "config.json"
+	var configPath = flag.String("config", "config.json", "Path to config file. (ex. `config.json`)")
+	flag.Parse()
 
-	config, err := LoadConfig(configPath)
+	config, err := LoadConfig(*configPath)
 	if err != nil {
 		log.Fatal(err)
 	}

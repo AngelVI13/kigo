@@ -4,6 +4,7 @@
 	"ExcludePatterns": ["*.exe", "*.git*"],
 	"Commands": [
 		"clear",
-		"gofmt -w kigo.go"
+		"gofmt -w kigo.go",
+		"go vet kigo.go"
 	]
 }
