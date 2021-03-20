@@ -105,6 +105,9 @@ func ExecuteCommands(commands []string) {
 		args := command[1:len(command)]
 
 		out, err := exec.Command(executable, args...).CombinedOutput()
+
+		// todo Make this output pretty
+		// todo add support for custom delimiter i.e. |>
 		log.Printf("|> %s: \n%s\n", cmd, out)
 
 		if err != nil {
@@ -120,7 +123,12 @@ type Config struct {
 	RootPath        string
 	IncludePatterns []string
 	ExcludePatterns []string
-	Commands        []string
+
+	// todo finish integration of delimiter and interval
+	Delimiter string
+	Interval  int
+
+	Commands []string
 }
 
 func LoadConfig(configPath string) (config Config, err error) {
@@ -162,7 +170,7 @@ func main() {
 
 	for {
 		// todo check for keypresses and exit gracefully
-		time.Sleep(1000)
+		time.Sleep(2 * time.Second)
 
 		changedFiles, err := ComputeChanges(FilesHash, &config)
 		if err != nil {
