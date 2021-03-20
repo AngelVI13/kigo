@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
@@ -131,7 +132,11 @@ func LoadConfig(configPath string) (config Config, err error) {
 		return config, fmt.Errorf("Failed while reading config file. Error: `%v`", err)
 	}
 
-	if err := json.Unmarshal(configData, &config); err != nil {
+	// Create new json decoder that does not allow any unknown fields in the config file
+	dec := json.NewDecoder(bytes.NewReader(configData))
+	dec.DisallowUnknownFields()
+
+	if err := dec.Decode(&config); err != nil {
 		return config, fmt.Errorf("Error while unmarshalling config file. Error: `%v`", err)
 	}
 
@@ -145,7 +150,6 @@ func main() {
 	// todo make this a cli argument with default value
 	configPath := "config.json"
 
-	// todo raise error if unmarshalling does not find and fill all fields of Config struct
 	config, err := LoadConfig(configPath)
 	if err != nil {
 		log.Fatal(err)
@@ -154,6 +158,7 @@ func main() {
 	FilesHash := make(FilesHash)
 
 	for {
+		// todo check for keypresses and exit gracefully
 		time.Sleep(1000)
 
 		// todo provide directly config instead of individual parameters
