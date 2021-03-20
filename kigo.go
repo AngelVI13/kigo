@@ -65,12 +65,14 @@ func GetFileHash(path string) (uint64, error) {
 
 type FilesHash map[string]uint64
 
-func ComputeChanges(filesHash FilesHash, rootPath string, excludePatterns, includePatterns []string) ([]string, error) {
+func ComputeChanges(filesHash FilesHash, config *Config) ([]string, error) {
 	var changedFiles []string
 
-	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(config.RootPath, func(path string, info os.FileInfo, err error) error {
 		// Ignore directories, excluded patterns and patterns not present in the include filter
-		if info.IsDir() || PatternsInPath(excludePatterns, path) || !PatternsInPath(includePatterns, path) {
+		if info.IsDir() ||
+			PatternsInPath(config.ExcludePatterns, path) ||
+			!PatternsInPath(config.IncludePatterns, path) {
 			return nil
 		}
 
@@ -161,8 +163,7 @@ func main() {
 		// todo check for keypresses and exit gracefully
 		time.Sleep(1000)
 
-		// todo provide directly config instead of individual parameters
-		changedFiles, err := ComputeChanges(FilesHash, config.RootPath, config.ExcludePatterns, config.IncludePatterns)
+		changedFiles, err := ComputeChanges(FilesHash, &config)
 		if err != nil {
 			log.Fatal(err)
 		}
