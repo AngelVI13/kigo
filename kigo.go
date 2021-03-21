@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/jwalton/gchalk"
 	"hash/fnv"
 	"io"
 	"log"
@@ -97,8 +98,11 @@ func ComputeChanges(filesHash FilesHash, config *Config) ([]string, error) {
 	return changedFiles, err
 }
 
+var CommandStyle = gchalk.WithBold().Green
+var ErrorStyle = gchalk.WithBold().Red
+
 func ExecuteCommands(commands, changedFiles []string, delimiter string) {
-	log.Println("Running commands...")
+	log.Println(gchalk.WithBold().Blue("Running commands..."))
 
 	for _, cmd := range commands {
 		files := strings.Join(changedFiles, " ")
@@ -111,13 +115,19 @@ func ExecuteCommands(commands, changedFiles []string, delimiter string) {
 
 		out, err := exec.Command(executable, args...).CombinedOutput()
 
-		// todo Make this output pretty
-		log.Printf("%s %s: \n%s\n", delimiter, cmd, out)
+		commandLine := fmt.Sprintf("%s %s:", delimiter, cmd)
+		log.Printf(CommandStyle(commandLine))
+
+		if len(out) > 0 {
+			log.Printf("\n%s\n", out)
+		} else {
+			log.Println(CommandStyle("...ok"))
+		}
 
 		if err != nil {
-			log.Printf("Error while executing: `%s`\n", cmd)
 			log.Println(err)
-			log.Printf("Interrupting further execution.\n\n")
+			log.Printf(ErrorStyle(fmt.Sprintf("Error while executing: `%s`\n", cmd)))
+			log.Printf(ErrorStyle(fmt.Sprintf("Interrupting further execution.\n\n")))
 			break
 		}
 	}
@@ -170,6 +180,11 @@ func getSleepDuration(configInterval int, defaultInterval time.Duration) time.Du
 // todo add support for custom defined placeholder
 const ChangedFilesPlaceholder = "<files>"
 
+// todo 1. add tests
+// todo 2. split logic into packages
+// todo 3. add ci build to github
+// todo 4. update readme
+// todo 5. generate and provide binaries
 func main() {
 	var configPath = flag.String("config", "config.json", "Path to config file. (ex. `config.json`)")
 	flag.Parse()
