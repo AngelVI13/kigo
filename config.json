@@ -4,6 +4,7 @@
 	"ExcludePatterns": ["*.exe", "*.git*"],
 	"Interval": 2,
 	"Delimiter": ">>>",
+	"FilesPlaceholder": "<files>",
 	"Commands": [
 		"clear",
 		"gofmt -w <files>",

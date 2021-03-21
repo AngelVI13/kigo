@@ -101,12 +101,12 @@ func ComputeChanges(filesHash FilesHash, config *Config) ([]string, error) {
 var CommandStyle = gchalk.WithBold().Green
 var ErrorStyle = gchalk.WithBold().Red
 
-func ExecuteCommands(commands, changedFiles []string, delimiter string) {
+func ExecuteCommands(config *Config, changedFiles []string) {
 	log.Println(gchalk.WithBold().Blue("Running commands..."))
 
-	for _, cmd := range commands {
+	for _, cmd := range config.Commands {
 		files := strings.Join(changedFiles, " ")
-		cmd = strings.ReplaceAll(cmd, ChangedFilesPlaceholder, files)
+		cmd = strings.ReplaceAll(cmd, config.FilesPlaceholder, files)
 
 		// split the command into parts (a part is any whitespace separated chain of chars)
 		command := strings.Fields(cmd)
@@ -115,7 +115,7 @@ func ExecuteCommands(commands, changedFiles []string, delimiter string) {
 
 		out, err := exec.Command(executable, args...).CombinedOutput()
 
-		commandLine := fmt.Sprintf("%s %s:", delimiter, cmd)
+		commandLine := fmt.Sprintf("%s %s:", config.Delimiter, cmd)
 		log.Printf(CommandStyle(commandLine))
 
 		if len(out) > 0 {
@@ -134,12 +134,13 @@ func ExecuteCommands(commands, changedFiles []string, delimiter string) {
 }
 
 type Config struct {
-	RootPath        string
-	IncludePatterns []string
-	ExcludePatterns []string
-	Delimiter       string
-	Interval        int
-	Commands        []string
+	RootPath         string
+	IncludePatterns  []string
+	ExcludePatterns  []string
+	Delimiter        string
+	Interval         int
+	FilesPlaceholder string
+	Commands         []string
 }
 
 func LoadConfig(configPath string) (config Config, err error) {
@@ -177,7 +178,6 @@ func getSleepDuration(configInterval int, defaultInterval time.Duration) time.Du
 	return sleepDuration
 }
 
-// todo add support for custom defined placeholder
 const ChangedFilesPlaceholder = "<files>"
 
 // todo 1. add tests
@@ -197,6 +197,11 @@ func main() {
 	FilesHash := make(FilesHash)
 	sleepDuration := getSleepDuration(config.Interval, time.Second)
 
+	// Set default placeholder for changed files if not provided
+	if config.FilesPlaceholder == "" {
+		config.FilesPlaceholder = ChangedFilesPlaceholder
+	}
+
 	for {
 		// todo check for keypresses and exit gracefully
 
@@ -211,6 +216,6 @@ func main() {
 			continue
 		}
 
-		ExecuteCommands(config.Commands, changedFiles, config.Delimiter)
+		ExecuteCommands(&config, changedFiles)
 	}
 }
