@@ -47,5 +47,5 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-        name: kigo-win.exe
+        name: kigo-win
         path: ./kigo.exe
