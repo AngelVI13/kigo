@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  build:
+  build-linux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -31,3 +31,27 @@ jobs:
       with:
         name: kigo-linux
         path: ./kigo
+
+  build-win:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.16
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
+      
+    - name: List files
+      run: ls -al
+      
+    - uses: actions/upload-artifact@v2
+      with:
+        name: kigo-win.exe
+        path: ./kigo.exe
