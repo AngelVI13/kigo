@@ -23,3 +23,11 @@ jobs:
 
     - name: Test
       run: go test -v ./...
+      
+    - name: List files
+      run: ls -al
+      
+    - uses: actions/upload-artifact@v2
+      with:
+        name: kigo-linux
+        path: ./kigo
