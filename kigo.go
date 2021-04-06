@@ -202,6 +202,12 @@ func main() {
 		config.FilesPlaceholder = ChangedFilesPlaceholder
 	}
 
+	// the first iteration of the loop will mark all files as changed
+	// since we are just building the file hash. This will lead to all
+	// commands being executed even though no actual file changes have happened.
+	// Disable command execution on startup iteration.
+	isStartup := true
+	
 	for {
 		// todo check for keypresses and exit gracefully
 
@@ -212,6 +218,11 @@ func main() {
 			log.Fatal(err)
 		}
 
+		if isStartup {
+			isStartup = false
+			continue
+		}
+		
 		if len(changedFiles) == 0 {
 			continue
 		}
