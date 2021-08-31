@@ -1,0 +1,38 @@
+{
+    "Defaults": [
+        {
+            "tag": "go",
+            "config": {
+                "RootPath": "./",
+                "IncludePatterns": ["*.go"],
+                "ExcludePatterns": ["*.exe", "*.git*"],
+                "Interval": 2,
+                "Delimiter": ">>>",
+                "FilesPlaceholder": "<files>",
+                "Commands": [
+                    "clear",
+                    "gofmt -w <files>",
+                    "go vet <files>"
+                ]
+            }
+        },
+        {
+            "tag": "python",
+            "config": {
+                "RootPath": "./",
+                "IncludePatterns": ["*.py"],
+                "ExcludePatterns": ["*__pycache__*", "*.pyc", "*.swp"],
+                "Interval": 2,
+                "Delimiter": ">>>",
+                "FilesPlaceholder": "<files>",
+                "Commands": [
+                    "clear",
+                    "py -3.7 -m black --line-length=120 <files>",
+                    "py -3.7 -m isort <files>",
+                    "py -3.7 -m flake8 <files> --ignore=E501",
+                    "py -3.7 -m mypy --follow-imports=silent <files>"
+                ]
+            }
+        }
+    ]
+}

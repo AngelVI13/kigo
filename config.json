@@ -8,6 +8,6 @@
 	"Commands": [
 		"clear",
 		"gofmt -w <files>",
-		"go vet <files>"
+		"go vet ."
 	]
 }

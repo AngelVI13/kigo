@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/AngelVI13/kigo/utils"
 	"github.com/jwalton/gchalk"
 	"hash/fnv"
-	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -17,22 +15,10 @@ import (
 	"time"
 )
 
-// FormatPatternSlice Modifies all members of a pattern slice to legal regex (in-place)
-func FormatPatternSlice(patterns []string) {
-	for i, pattern := range patterns {
-		patterns[i] = FormatPattern(pattern)
-	}
-}
+import _ "embed"
 
-func FormatPattern(pattern string) string {
-	// Escape all "." characters
-	pattern = strings.Replace(pattern, ".", "\\.", -1)
-
-	// Convert match all operator "*" to valid regex ".*"
-	pattern = strings.Replace(pattern, "*", ".*", -1)
-
-	return pattern
-}
+//go:embed defaults.json
+var DEFAULT_CONFIGS string
 
 // PatternsInPath Checks if any of the provided patterns is found in the path.
 func PatternsInPath(patterns []string, path string) bool {
@@ -67,7 +53,7 @@ func GetFileHash(path string) (uint64, error) {
 
 type FilesHash map[string]uint64
 
-func ComputeChanges(filesHash FilesHash, config *Config) ([]string, error) {
+func ComputeChanges(filesHash FilesHash, config *utils.Config) ([]string, error) {
 	var changedFiles []string
 
 	err := filepath.Walk(config.RootPath, func(path string, info os.FileInfo, err error) error {
@@ -101,7 +87,7 @@ func ComputeChanges(filesHash FilesHash, config *Config) ([]string, error) {
 var CommandStyle = gchalk.WithBold().Green
 var ErrorStyle = gchalk.WithBold().Red
 
-func ExecuteCommands(config *Config, changedFiles []string) {
+func ExecuteCommands(config *utils.Config, changedFiles []string) {
 	log.Println(gchalk.WithBold().Blue("Running commands..."))
 
 	for _, cmd := range config.Commands {
@@ -133,42 +119,6 @@ func ExecuteCommands(config *Config, changedFiles []string) {
 	}
 }
 
-type Config struct {
-	RootPath         string
-	IncludePatterns  []string
-	ExcludePatterns  []string
-	Delimiter        string
-	Interval         int
-	FilesPlaceholder string
-	Commands         []string
-}
-
-func LoadConfig(configPath string) (config Config, err error) {
-	configFile, err := os.Open(configPath)
-	if err != nil {
-		return config, fmt.Errorf("Failed to open config file. Error: `%v`", err)
-	}
-	defer configFile.Close()
-
-	configData, err := io.ReadAll(configFile)
-	if err != nil {
-		return config, fmt.Errorf("Failed while reading config file. Error: `%v`", err)
-	}
-
-	// Create new json decoder that does not allow any unknown fields in the config file
-	dec := json.NewDecoder(bytes.NewReader(configData))
-	dec.DisallowUnknownFields()
-
-	if err := dec.Decode(&config); err != nil {
-		return config, fmt.Errorf("Error while unmarshalling config file. Error: `%v`", err)
-	}
-
-	// Format include & exclude patterns into valid regex
-	FormatPatternSlice(config.ExcludePatterns)
-	FormatPatternSlice(config.IncludePatterns)
-	return config, nil
-}
-
 func getSleepDuration(configInterval int, defaultInterval time.Duration) time.Duration {
 	// Compute sleep duration in seconds. Minimum sleep is 1s.
 	sleepDuration := time.Duration(configInterval) * time.Second
@@ -180,20 +130,7 @@ func getSleepDuration(configInterval int, defaultInterval time.Duration) time.Du
 
 const ChangedFilesPlaceholder = "<files>"
 
-// todo 1. add tests
-// todo 2. split logic into packages
-// todo 3. add ci build to github
-// todo 4. update readme
-// todo 5. generate and provide binaries
-func main() {
-	var configPath = flag.String("config", "config.json", "Path to config file. (ex. `config.json`)")
-	flag.Parse()
-
-	config, err := LoadConfig(*configPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func Run(config *utils.Config) {
 	FilesHash := make(FilesHash)
 	sleepDuration := getSleepDuration(config.Interval, time.Second)
 
@@ -207,13 +144,13 @@ func main() {
 	// commands being executed even though no actual file changes have happened.
 	// Disable command execution on startup iteration.
 	isStartup := true
-	
+
 	for {
 		// todo check for keypresses and exit gracefully
 
 		time.Sleep(sleepDuration)
 
-		changedFiles, err := ComputeChanges(FilesHash, &config)
+		changedFiles, err := ComputeChanges(FilesHash, config)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -222,11 +159,26 @@ func main() {
 			isStartup = false
 			continue
 		}
-		
+
 		if len(changedFiles) == 0 {
 			continue
 		}
 
-		ExecuteCommands(&config, changedFiles)
+		ExecuteCommands(config, changedFiles)
 	}
+}
+
+// todo 1. add tests
+// todo 2. split logic into packages
+// todo 3. update readme
+func main() {
+	var configPath = flag.String("config", "config.json", "Path to config file. (ex. `config.json`)")
+	flag.Parse()
+
+	config, err := utils.LoadConfig(*configPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	Run(&config)
 }
