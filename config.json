@@ -8,6 +8,7 @@
 	"Commands": [
 		"clear",
 		"gofmt -w <files>",
-		"go vet ."
+		"go vet .",
+		"ctags --options=C:/Users/angel.iliev/.ctags"
 	]
 }
