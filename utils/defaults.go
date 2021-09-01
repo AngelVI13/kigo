@@ -8,12 +8,12 @@ import (
 )
 
 type DefaultConfig struct {
-	tag    string
-	config Config
+	Tag           string
+	Configuration Config
 }
 
 type DefaultConfigs struct {
-	defaults []DefaultConfig
+	Defaults []DefaultConfig
 }
 
 func ParseDefaultConfigs(defaults []byte) (configs []DefaultConfig, err error) {
@@ -26,7 +26,7 @@ func ParseDefaultConfigs(defaults []byte) (configs []DefaultConfig, err error) {
 		return configs, fmt.Errorf("Error while unmarshalling default configs file. Error: `%v`", err)
 	}
 
-	return config.defaults, nil
+	return config.Defaults, nil
 }
 
 func WriteConfigToFile(config Config, outFilePath string) error {
@@ -48,11 +48,11 @@ func CreateDefaultConfig(defaults []byte, tag, outFilePath string) (err error) {
 	}
 
 	for _, defaultConfig := range defaultConfigs {
-		if defaultConfig.tag != tag {
+		if defaultConfig.Tag != tag {
 			continue
 		}
 
-		return WriteConfigToFile(defaultConfig.config, outFilePath)
+		return WriteConfigToFile(defaultConfig.Configuration, outFilePath)
 	}
 
 	return fmt.Errorf("Could not find default config for tag=`%s`", tag)

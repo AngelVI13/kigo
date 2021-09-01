@@ -14,7 +14,11 @@ var DEFAULT_CONFIGS []byte
 // todo 1. add tests
 // todo 2. update readme
 func main() {
-	arg.MustParse(&utils.Args)
+	parser := arg.MustParse(&utils.Args)
+	if parser.Subcommand() == nil {
+		parser.Fail("Missing subcommand")
+	}
+
 	switch {
 	case utils.Args.Run != nil:
 		config, err := utils.LoadConfig(utils.Args.Run.Config)
